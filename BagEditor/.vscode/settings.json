@@ -67,6 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Scrum-3.slnx",
-    "dotnet.enableWorkspaceBasedDevelopment": false
+    "dotnet.defaultSolution": "BagEditor.slnx"
 }
