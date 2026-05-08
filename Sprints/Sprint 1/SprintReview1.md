@@ -1,6 +1,10 @@
-We hebben de eerste week niet veel gedaan i.v.m de vakantie.
+Deze week was korter i.v.m de vakantie.
 
-We hebben een begin model gemaakt voor de Bugnum. Ook hebben we een stap gemaakt in het maken van de materials voor de tassen.
-We hebben ook het begin van de UI gemaakt.
+De bagnum is bijna klaar (moet feedback verwerkt worden)
+De toppings is: disco dip klaar
+De ketting is opnieuw gemaakt en is af
+Een test website is aangemaakt omdat we van Unity naar Three.js zijn gewisseld
+De zipper van de tas is gemaakt/gefixt
 
-In de volgende sprint gaan we proberen de Models, Materials en de UI af te maken.
+
+Individuele opdrachten per sprint kunnen hier bekeken worden: https://github.com/users/ThijmenE/projects/3
