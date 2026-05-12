@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Clothing Customizer</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+<div id="app">
+  <div id="viewer">
+    <div id="loading">
+      Loading 3D Model...
+    </div>
+  </div>
+
+  <aside id="palette">
+    <header>
+      <h1>Flavours</h1>
+      <p>Pick a section, then choose a swatch to update that material group. Use the custom color picker to fine-tune the active material.</p>
+    </header>
+
+    <div class="group-grid" id="groups"></div>
+
+    <div class="toolbar">
+      <div class="button-row">
+        <button class="action-btn" id="rotateBtn">Toggle Auto Rotate</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/loaders/GLTFLoader.js"
+  }
+}
+</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
