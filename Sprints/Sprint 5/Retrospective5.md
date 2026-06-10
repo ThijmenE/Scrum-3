@@ -1,0 +1,1 @@
+weinig contact gehad in scrum groep ivm ziekte en van aanwezige leden is weinig gewerkt aan scrum door keuzedeel of andere school opdrachten.
