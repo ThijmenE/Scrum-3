@@ -1,0 +1,13 @@
+{
+  "flavors": {
+    "title": "Flavors",
+    "subtitle": "(Base color)",
+    "meshNames": ["Body"],
+    "swatches": [
+      { "name": "Vanilla", "color": "#f6e7c1" },
+      { "name": "Chocolate", "color": "#4b2f22" }
+    ],
+    "defaultColor": "#f6e7c1",
+    "toggle": false
+  }
+}

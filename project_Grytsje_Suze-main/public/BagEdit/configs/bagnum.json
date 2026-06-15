@@ -1,0 +1,56 @@
+{
+  "flavors": {
+    "title": "Flavors",
+    "subtitle": "(Base color)",
+    "meshNames": ["Body"],
+    "swatches": [
+      { "name": "Vanilla", "color": "#f6e7c1" },
+      { "name": "Mint", "color": "#b9e3c6" },
+      { "name": "Pistachio", "color": "#a7c67b" },
+      { "name": "Lemon", "color": "#f6e27a" },
+      { "name": "Mango", "color": "#f2a74b" },
+      { "name": "Bubblegum", "color": "#f4a3b5" },
+      { "name": "Raspberry", "color": "#c2185b" },
+      { "name": "Blackberry", "color": "#3d2a5c" },
+      { "name": "Cherry", "color": "#b11226" },
+      { "name": "Chocolate", "color": "#4b2f22" }
+    ],
+    "defaultColor": "#f6e7c1",
+    "toggle": false
+  },
+  "drip": {
+    "title": "Drip or Swirl",
+    "subtitle": "",
+    "meshNames": ["Drip", "Swirl"],
+    "meshOptions": ["None", "Swirl", "Drip"],
+    "defaultMesh": "None",
+    "swatches": [
+      { "name": "Silver", "color": "#c9c9c9" },
+      { "name": "Gold Caramel", "color": "#c08a3c" },
+      { "name": "Rose Gold", "color": "#b76b5e" },
+      { "name": "Dark Chocolate", "color": "#57321f" }
+    ],
+    "toggle": true,
+    "singleChoice": true
+  },
+  "topping": {
+    "title": "Topping",
+    "subtitle": "",
+    "meshNames": ["Sprinkles"],
+    "meshOptions": ["None", "Sprinkles"],
+    "defaultMesh": "None",
+    "swatches": [],
+    "toggle": true,
+    "singleChoice": true
+  },
+  "hardware": {
+    "title": "Hardware",
+    "subtitle": "",
+    "meshNames": ["Chain", "Holder", "Slider"],
+    "swatches": [
+      { "name": "Silver", "color": "#bfc5c7" },
+      { "name": "Gold", "color": "#c9a24a" }
+    ],
+    "toggle": false
+  }
+}
