@@ -79,6 +79,7 @@
       { "name": "Silver", "color": "#bfc5c7" },
       { "name": "Gold", "color": "#c9a24a" }
     ],
-    "toggle": false
+    "toggle": false,
+    "defaultColor": "#bfc5c7"
   }
 }

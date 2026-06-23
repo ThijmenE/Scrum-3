@@ -3,10 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { loadModelConfig, materialPresets } from './config.js';
 
-// =====================================================
-// MODEL RESOLUTION + DEBUG
-// =====================================================
-
+// strip path/extension from a model filename so we can match it to a config
 function normalizeName(name) {
   return name
     .split("/").pop()
@@ -25,29 +22,17 @@ async function getActiveMaterialGroups() {
   return await loadModelConfig(modelName);
 }
 
-// =====================================================
-// SCENE SETUP
-// =====================================================
+// --- scene setup ---
 
 const scene = new THREE.Scene();
 scene.background = null;
 
-// CAMERA
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.5, 4);
 
-// RENDERER
-const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  alpha: true
-});
-
 const viewerElement = document.getElementById("viewer");
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(viewerElement.clientWidth, viewerElement.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setClearColor(0x000000, 0);
@@ -57,6 +42,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.8;
 viewerElement.appendChild(renderer.domElement);
 
+// build a simple env map so materials catch some light
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
 pmremGenerator.compileEquirectangularShader();
 
@@ -69,6 +55,7 @@ const envFloor = new THREE.Mesh(
 envFloor.rotation.x = -Math.PI / 2;
 envFloor.position.y = -0.5;
 envScene.add(envFloor);
+
 const envLight = new THREE.DirectionalLight(0xffffff, 1.5);
 envLight.position.set(0, 2, 1);
 envScene.add(envLight);
@@ -78,39 +65,43 @@ envScene.add(envLight2);
 
 scene.environment = pmremGenerator.fromScene(envScene, 0.04).texture;
 
-// CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// LIGHTS
+// lights
 scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+
 const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
 keyLight.position.set(8, 6, 8);
 scene.add(keyLight);
+
 const fillLight = new THREE.DirectionalLight(0xffffff, 1.5);
 fillLight.position.set(-6, 4, -6);
 scene.add(fillLight);
+
 const backLight = new THREE.DirectionalLight(0xffffff, 1.0);
 backLight.position.set(0, 8, -10);
 scene.add(backLight);
 
-// =====================================================
-// STATE
-// =====================================================
+// --- state ---
 
 const state = {
   model: null,
   materials: {},
   meshes: {},
   layers: {},
-  activeMesh: {}, // Track active mesh for each group (e.g., { drip: "Drip" })
+  activeMesh: {},
   selectedSwatches: {},
-  autoRotate: false
+  autoRotate: false,
+  // for dualSelector groups: tracks active shape + material per side
+  dualState: {
+    front: { shape: null, material: null },
+    back:  { shape: null, material: null }
+  },
+  lampOn: { front: false, back: false }
 };
 
-// =====================================================
-// HELPERS
-// =====================================================
+// --- material helpers ---
 
 function getMaterialPreset(groupName) {
   const preset = materialPresets[groupName] || materialPresets.default;
@@ -132,24 +123,19 @@ function applyMaterialPreset(material, groupName) {
 
 function setMaterialColor(material, color, groupName) {
   if (!material) return;
-  
   if (groupName === "pattern") {
     material = material.clone();
   }
-  
   material.color.set(color);
   applyMaterialPreset(material, groupName);
   if (material.map) material.map = null;
   material.needsUpdate = true;
 }
 
-// =====================================================
-// MESH TOGGLING LOGIC
-// =====================================================
+// --- mesh visibility ---
 
-// Toggle visibility for a specific mesh in a group
 function toggleMesh(groupName, meshName, isVisible) {
-  if (!state.meshes[groupName] || !state.meshes[groupName][meshName]) return;
+  if (!state.meshes[groupName]?.[meshName]) return;
   state.meshes[groupName][meshName].forEach(mesh => {
     mesh.visible = isVisible;
   });
@@ -157,135 +143,356 @@ function toggleMesh(groupName, meshName, isVisible) {
   state.layers[groupName][meshName] = isVisible;
 }
 
-// Set the active mesh for a group and update visibility
 function setActiveMesh(groupName, meshName, materialGroups) {
   const group = materialGroups[groupName];
-  if (!group || !group.toggle) return;
+  if (!group?.toggle) return;
 
   state.activeMesh[groupName] = meshName;
 
-  // Hide everything
-  Object.keys(state.meshes[groupName] || {}).forEach(m => {
-    toggleMesh(groupName, m, false);
-  });
+  // hide all meshes in this group first
+  Object.keys(state.meshes[groupName] || {}).forEach(m => toggleMesh(groupName, m, false));
 
-  // None = show nothing
   if (meshName === "None") {
-    document.querySelectorAll(
-      `.mesh-toggle-btn[data-group="${groupName}"]`
-    ).forEach(btn => {
-      btn.classList.remove("is-active");
-
-      if (btn.dataset.mesh === "None") {
-        btn.classList.add("is-active");
-      }
+    document.querySelectorAll(`.mesh-toggle-btn[data-group="${groupName}"]`).forEach(btn => {
+      btn.classList.toggle("is-active", btn.dataset.mesh === "None");
     });
-
     return;
   }
 
-  // Show selected mesh
   if (state.meshes[groupName][meshName]) {
     toggleMesh(groupName, meshName, true);
   }
 
-  document.querySelectorAll(
-    `.mesh-toggle-btn[data-group="${groupName}"]`
-  ).forEach(btn => {
-    btn.classList.remove("is-active");
-
-    if (btn.dataset.mesh === meshName) {
-      btn.classList.add("is-active");
-    }
+  document.querySelectorAll(`.mesh-toggle-btn[data-group="${groupName}"]`).forEach(btn => {
+    btn.classList.toggle("is-active", btn.dataset.mesh === meshName);
   });
 }
 
-// Apply color to the active mesh in a group
 function applyColorToActiveMesh(groupName, color) {
   const activeMeshName = state.activeMesh[groupName];
   if (!activeMeshName) return;
 
-  // Apply color to all materials in the active mesh
-  if (state.meshes[groupName] && state.meshes[groupName][activeMeshName]) {
-    state.meshes[groupName][activeMeshName].forEach(mesh => {
-      if (mesh.material) {
-        if (Array.isArray(mesh.material)) {
-          mesh.material.forEach(mat => setMaterialColor(mat, color, groupName));
-        } else {
-          setMaterialColor(mesh.material, color, groupName);
-        }
-      }
-    });
-  }
+  state.meshes[groupName]?.[activeMeshName]?.forEach(mesh => {
+    if (!mesh.material) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    mats.forEach(mat => setMaterialColor(mat, color, groupName));
+  });
 }
 
-// =====================================================
-// SWATCH APPLY
-// =====================================================
+// --- swatch logic ---
 
 function applySwatch(groupName, swatch, btn, materialGroups) {
   const group = materialGroups[groupName];
-  if (!group) {
-    console.warn("Group not found:", groupName);
-    return;
-  }
+  if (!group) return;
 
-  // Remove .is-active from all swatches in this group
   document.querySelectorAll(`.swatch-btn[data-group="${groupName}"]`).forEach(b => {
     b.classList.remove("is-active");
   });
 
-  // Add .is-active to the clicked button
   if (btn) {
     btn.classList.add("is-active");
     btn.setAttribute("data-group", groupName);
   }
 
-  // Multi-color swatch (per-mesh colors)
   if (swatch.colors && typeof swatch.colors === 'object') {
+    // multi-color swatch, each mesh gets its own color
     Object.entries(swatch.colors).forEach(([meshName, color]) => {
-      if (state.meshes[groupName] && state.meshes[groupName][meshName]) {
-        state.meshes[groupName][meshName].forEach(mesh => {
-          if (!mesh.material) return;
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          const newMats = mats.map(mat => {
-            const cloned = mat.clone();
-            cloned.color.set(color);
-            applyMaterialPreset(cloned, groupName);
-            if (cloned.map) cloned.map = null;
-            cloned.needsUpdate = true;
-            return cloned;
-          });
-          mesh.material = Array.isArray(mesh.material) ? newMats : newMats[0];
+      state.meshes[groupName]?.[meshName]?.forEach(mesh => {
+        if (!mesh.material) return;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        const newMats = mats.map(mat => {
+          const cloned = mat.clone();
+          cloned.color.set(color);
+          applyMaterialPreset(cloned, groupName);
+          if (cloned.map) cloned.map = null;
+          cloned.needsUpdate = true;
+          return cloned;
         });
-      }
+        mesh.material = Array.isArray(mesh.material) ? newMats : newMats[0];
+      });
     });
   } else if (swatch.color) {
-    // Single color swatch (legacy behavior)
     if (group.toggle) {
       applyColorToActiveMesh(groupName, swatch.color);
     } else {
-      if (group.targets) {
-        group.targets.forEach(({ material }) => {
-          setMaterialColor(material, swatch.color, groupName);
-        });
-      }
+      group.targets?.forEach(({ material }) => {
+        setMaterialColor(material, swatch.color, groupName);
+      });
     }
   }
 
   state.selectedSwatches[groupName] = swatch;
 }
 
-// =====================================================
-// UI
-// =====================================================
+function getLampMeshName(side, shape) {
+  return `${shape} lamp ${side}`.toLowerCase();
+}
+
+function applyLampVisibility(side) {
+  const bucketKey = "_dual_" + side;
+  const bucket = state.meshes[bucketKey] || {};
+  // hide all lamp meshes for this side first
+  Object.entries(bucket).forEach(([key, meshList]) => {
+    if (key.includes(" lamp ")) meshList.forEach(m => { m.visible = false; });
+  });
+  if (!state.lampOn[side]) return;
+  // show lamp for active shape only
+  const shape = state.dualState[side].shape;
+  if (!shape) return;
+  const key = getLampMeshName(side, shape);
+  bucket[key]?.forEach(m => { m.visible = true; });
+}
+
+// --- dual selector (front/back shape + material picker) ---
+
+function getDualMeshName(side, shape, material, config) {
+  // shapes in noMaterial list don't have a material in their mesh name
+  if (config?.noMaterial?.map(s => s.toLowerCase()).includes(shape.toLowerCase())) {
+    return `${shape} ${side}`.toLowerCase();
+  }
+  return `${shape} ${material} ${side}`.toLowerCase();
+}
+
+// hide all meshes that match the pattern "{shape} {material} {side}" for a given side
+function hideAllDualMeshes(side, config) {
+  config.shapes.forEach(shape => {
+    if (config.noMaterial?.map(s => s.toLowerCase()).includes(shape.toLowerCase())) {
+      const name = getDualMeshName(side, shape, null, config);
+      const meshList = state.meshes["_dual_" + side]?.[name];
+      if (meshList) meshList.forEach(m => { m.visible = false; });
+    } else {
+      config.materials.forEach(material => {
+        const name = getDualMeshName(side, shape, material, config);
+        const meshList = state.meshes["_dual_" + side]?.[name];
+        if (meshList) meshList.forEach(m => { m.visible = false; });
+      });
+    }
+  });
+}
+
+function applyDualSelection(side, config) {
+  const ds = state.dualState[side];
+  if (!ds.shape) return;
+
+  hideAllDualMeshes(side, config);
+
+  const targetName = getDualMeshName(side, ds.shape, ds.material, config);
+  const meshList = state.meshes["_dual_" + side]?.[targetName];
+  if (meshList) meshList.forEach(m => { m.visible = true; });
+}
+
+function buildDualSelectorUI(groupName, config) {
+  const section = document.createElement("section");
+  section.className = "group dual-selector-group";
+  section.setAttribute("data-dual-side", config.side);
+
+  const title = document.createElement("h2");
+  title.className = "group-title";
+  title.textContent = config.title;
+  section.appendChild(title);
+
+  function makeChipBtn(value, type, isActive) {
+    const btn = document.createElement("button");
+    btn.className = "dual-btn" + (isActive ? " is-active" : "");
+    btn.setAttribute("data-dual-group", groupName);
+    btn.setAttribute("data-dual-type", type);
+    btn.setAttribute("data-value", value);
+    btn.innerHTML = `
+      <span class="dual-chip"></span>
+      <span class="dual-label">${value}</span>
+    `;
+    return btn;
+  }
+
+  // shape picker
+  const shapeLabel = document.createElement("p");
+  shapeLabel.className = "group-subtitle";
+  shapeLabel.textContent = "Shape";
+  section.appendChild(shapeLabel);
+
+  const shapeList = document.createElement("div");
+  shapeList.className = "dual-list";
+
+  config.shapes.forEach(shape => {
+    const btn = makeChipBtn(shape, "shape", state.dualState[config.side].shape === shape);
+    btn.onclick = () => {
+      state.dualState[config.side].shape = shape;
+      applyDualSelection(config.side, config);
+      applyLampVisibility(config.side);
+      section.querySelectorAll('[data-dual-type="shape"]').forEach(b => {
+        b.classList.toggle("is-active", b.dataset.value === shape);
+      });
+      const isNoMaterial = config.noMaterial?.map(s => s.toLowerCase()).includes(shape.toLowerCase());
+      const matSection = section.querySelector('.dual-material-section');
+      if (matSection) matSection.style.display = isNoMaterial ? 'none' : '';
+    };
+    shapeList.appendChild(btn);
+  });
+
+  section.appendChild(shapeList);
+
+  // material picker
+  const matSection = document.createElement("div");
+  matSection.className = "dual-material-section";
+
+  const matLabel = document.createElement("p");
+  matLabel.className = "group-subtitle";
+  matLabel.style.marginTop = "12px";
+  matLabel.textContent = "Material";
+  matSection.appendChild(matLabel);
+
+  const matList = document.createElement("div");
+  matList.className = "dual-list";
+
+  config.materials.forEach(material => {
+    const btn = makeChipBtn(material, "material", state.dualState[config.side].material === material);
+    btn.onclick = () => {
+      state.dualState[config.side].material = material;
+      applyDualSelection(config.side, config);
+      section.querySelectorAll('[data-dual-type="material"]').forEach(b => {
+        b.classList.toggle("is-active", b.dataset.value === material);
+      });
+      section._refreshColors?.(material);
+    };
+    matList.appendChild(btn);
+  });
+
+  if (!state.dualColor) state.dualColor = { front: null, back: null };
+  matSection.appendChild(matList);
+  section.appendChild(matSection);
+
+  // color picker
+  const colorSection = document.createElement("div");
+  colorSection.className = "dual-color-section";
+  colorSection.style.display = "none";
+
+  const colorLabel = document.createElement("p");
+  colorLabel.className = "group-subtitle";
+  colorLabel.style.marginTop = "12px";
+  colorLabel.textContent = "Color";
+  colorSection.appendChild(colorLabel);
+
+  const colorList = document.createElement("div");
+  colorList.className = "swatch-list";
+  colorSection.appendChild(colorList);
+  section.appendChild(colorSection);
+
+  // lamp toggle
+  if (config.hasLamp) {
+    const lampLabel = document.createElement("p");
+    lampLabel.className = "group-subtitle";
+    lampLabel.style.marginTop = "14px";
+    lampLabel.textContent = "Lamp";
+
+    const lampList = document.createElement("div");
+    lampList.className = "dual-list";
+
+    const lampBtn = makeChipBtn("Lamp", "lamp", false);
+    lampBtn.setAttribute("data-lamp-side", config.side);
+    lampBtn.onclick = () => {
+      state.lampOn[config.side] = !state.lampOn[config.side];
+      lampBtn.classList.toggle("is-active", state.lampOn[config.side]);
+      applyLampVisibility(config.side);
+    };
+
+    lampList.appendChild(lampBtn);
+    section.appendChild(lampLabel);
+    section.appendChild(lampList);
+  }
+
+  section._refreshColors = (material) => {
+    const swatches = config.materialColors?.[material];
+    colorList.innerHTML = "";
+    if (!swatches?.length) {
+      colorSection.style.display = "none";
+      return;
+    }
+    colorSection.style.display = "";
+    swatches.forEach(swatch => {
+      const btn = document.createElement("button");
+      btn.className = "swatch-btn";
+      btn.innerHTML = `
+        <span class="swatch-chip" style="background:${swatch.color}"></span>
+        <span class="swatch-label">${swatch.name}</span>
+      `;
+      btn.onclick = () => {
+        state.dualColor[config.side] = swatch.color;
+        const ds = state.dualState[config.side];
+        const key = getDualMeshName(config.side, ds.shape, ds.material, config);
+        const meshList = state.meshes["_dual_" + config.side]?.[key];
+        if (meshList) {
+          meshList.forEach(m => {
+            if (!m.material) return;
+            const mats = Array.isArray(m.material) ? m.material : [m.material];
+            const newMats = mats.map(mat => {
+              const cloned = mat.clone();
+              cloned.color.set(swatch.color);
+              cloned.needsUpdate = true;
+              return cloned;
+            });
+            m.material = Array.isArray(m.material) ? newMats : newMats[0];
+          });
+        }
+        colorList.querySelectorAll(".swatch-btn").forEach(b => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+      };
+      colorList.appendChild(btn);
+    });
+  };
+
+  return section;
+}
+
+// --- UI builder ---
 
 function buildGroupUI(materialGroups) {
   const container = document.getElementById("groups");
   container.innerHTML = "";
 
+  // collect dual selectors to render as a tabbed unit
+  const dualGroups = Object.entries(materialGroups).filter(([, g]) => g.type === "dualSelector");
+  let dualTabsRendered = false;
+
   Object.entries(materialGroups).forEach(([groupName, group]) => {
+    if (group.type === "dualSelector") {
+      if (dualTabsRendered) return; // only render the tab container once
+      dualTabsRendered = true;
+
+      // build the tab wrapper
+      const tabWrapper = document.createElement("div");
+      tabWrapper.className = "dual-tab-wrapper";
+
+      // tab bar
+      const tabBar = document.createElement("div");
+      tabBar.className = "dual-tab-bar";
+
+      const panels = [];
+
+      dualGroups.forEach(([dualGroupName, dualConfig], i) => {
+        const tabBtn = document.createElement("button");
+        tabBtn.className = "dual-tab-btn" + (i === 0 ? " is-active" : "");
+        tabBtn.textContent = dualConfig.title;
+        tabBtn.onclick = () => {
+          tabBar.querySelectorAll(".dual-tab-btn").forEach(b => b.classList.remove("is-active"));
+          tabBtn.classList.add("is-active");
+          panels.forEach(p => p.style.display = "none");
+          panels[i].style.display = "";
+        };
+        tabBar.appendChild(tabBtn);
+
+        const panel = buildDualSelectorUI(dualGroupName, dualConfig);
+        panel.style.display = i === 0 ? "" : "none";
+        panels.push(panel);
+      });
+
+      tabWrapper.appendChild(tabBar);
+      dualGroups.forEach((_, i) => tabWrapper.appendChild(panels[i]));
+      container.appendChild(tabWrapper);
+      return;
+    }
+
     const section = document.createElement("section");
+
     const title = document.createElement("h2");
     title.textContent = group.title;
     section.appendChild(title);
@@ -297,7 +504,7 @@ function buildGroupUI(materialGroups) {
       section.appendChild(subtitle);
     }
 
-    // Add mesh toggle buttons if this group is toggleable
+    // toggle buttons (e.g. Drip / Swirl / None)
     if (group.toggle && group.meshOptions) {
       const toggleWrap = document.createElement("div");
       toggleWrap.className = "toggle-group";
@@ -307,18 +514,12 @@ function buildGroupUI(materialGroups) {
         btn.className = "mesh-toggle-btn";
         btn.setAttribute("data-group", groupName);
         btn.setAttribute("data-mesh", meshName);
-
-        // Use a default color for the chip (e.g., gray)
         btn.innerHTML = `
           <span class="swatch-chip"></span>
           <span class="swatch-label">${meshName}</span>
         `;
+        btn.onclick = () => setActiveMesh(groupName, meshName, materialGroups);
 
-        btn.onclick = () => {
-          setActiveMesh(groupName, meshName, materialGroups);
-        };
-
-        // Mark the default active mesh as active
         if (state.activeMesh[groupName] === meshName) {
           btn.classList.add("is-active");
         }
@@ -329,12 +530,12 @@ function buildGroupUI(materialGroups) {
       section.appendChild(toggleWrap);
     }
 
-    // Add color swatches
-    if (group.swatches && group.swatches.length > 0) {
+    // color swatches
+    if (group.swatches?.length > 0) {
       const swatchWrap = document.createElement("div");
       swatchWrap.className = "swatch-list";
 
-      group.swatches.forEach((swatch) => {
+      group.swatches.forEach(swatch => {
         const btn = document.createElement("button");
         btn.className = "swatch-btn";
         btn.setAttribute("data-group", groupName);
@@ -353,122 +554,127 @@ function buildGroupUI(materialGroups) {
   });
 }
 
-// =====================================================
-// RESIZE HANDLING
-// =====================================================
+// --- resize ---
 
 function onWindowResize() {
   const rect = viewerElement.getBoundingClientRect();
-  const w = rect.width;
-  const h = rect.height;
-
-  camera.aspect = w / h;
+  camera.aspect = rect.width / rect.height;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
+  renderer.setSize(rect.width, rect.height);
 }
 
-// Initialize resize handler
 onWindowResize();
 window.addEventListener("resize", onWindowResize);
 
-// =====================================================
-// =====================================================
-// LOADER
-// =====================================================
+// --- loader + init ---
 
 const loader = new GLTFLoader();
 
-// =====================================================
-// INIT
-// =====================================================
-
 async function init() {
   const loading = document.getElementById("loading");
-  
+
   try {
     const materialGroups = await getActiveMaterialGroups();
-    console.log("Matched config for model:", getModelName(), "| Groups:", Object.keys(materialGroups));
-    
+    console.log("config loaded for:", getModelName(), "| groups:", Object.keys(materialGroups));
+
     const model = await new Promise((resolve, reject) => {
       loader.load(HUIDIG_3D_MODEL, resolve, undefined, reject);
     });
-    
+
     state.model = model.scene;
     state.model.position.set(0, -1, 0);
 
-    // Initialize state.meshes, state.layers, and state.activeMesh
+    // set up empty buckets for each group
     Object.keys(materialGroups).forEach(groupName => {
-      state.meshes[groupName] = {};
-      state.layers[groupName] = {};
+      const group = materialGroups[groupName];
+      if (group.type === "dualSelector") {
+        // use a separate bucket keyed by _dual_{side}
+        state.meshes["_dual_" + group.side] = {};
+        // set defaults
+        state.dualState[group.side].shape    = group.defaultShape    || group.shapes[0];
+        state.dualState[group.side].material = group.defaultMaterial || group.materials[0];
+      } else {
+        state.meshes[groupName] = {};
+        state.layers[groupName] = {};
+      }
     });
 
-    // Assign materials and meshes
-    state.model.traverse((child) => {
+    // debug: log all mesh names from the glb
+    state.model.traverse(child => {
+      if (child.isMesh) console.log('[mesh name]', JSON.stringify(child.name));
+    });
+
+    // walk the model and sort meshes + materials into their groups
+    state.model.traverse(child => {
       if (!child.isMesh) return;
 
-      // Assign materials
       if (Array.isArray(child.material)) {
-        child.material.forEach((mat, i) => {
-          state.materials[child.name + i] = mat;
-        });
+        child.material.forEach((mat, i) => { state.materials[child.name + i] = mat; });
       } else {
         state.materials[child.name] = child.material;
       }
 
-      // Assign meshes to state.meshes based on group configs
       Object.entries(materialGroups).forEach(([groupName, group]) => {
-        const cleanName = child.name.replace(/\s-\sMaterial(?:\s\d+)?$/i, "").trim();
+        // normalize: strip blender suffix, replace underscores with spaces
+        const cleanName = child.name
+          .replace(/\s-\sMaterial(?:\s\d+)?$/i, "")
+          .replace(/_/g, " ")
+          .trim();
+
+        if (group.type === "dualSelector") {
+          const bucketKey = "_dual_" + group.side;
+          const matchesSide = cleanName.toLowerCase().endsWith(" " + group.side.toLowerCase());
+          if (matchesSide) {
+            // always store with lowercase key so lookups always match
+            const key = cleanName.toLowerCase();
+            if (!state.meshes[bucketKey][key]) state.meshes[bucketKey][key] = [];
+            state.meshes[bucketKey][key].push(child);
+            child.visible = false;
+            console.log(`[dual] registered "${key}" in bucket ${bucketKey}`);
+          }
+          return;
+        }
+
         group.meshNames.forEach(meshName => {
           if (cleanName.toLowerCase() === meshName.toLowerCase()) {
-            if (!state.meshes[groupName][meshName]) {
-              state.meshes[groupName][meshName] = [];
-            }
+            if (!state.meshes[groupName][meshName]) state.meshes[groupName][meshName] = [];
             state.meshes[groupName][meshName].push(child);
           }
         });
       });
     });
 
-      // Assign targets for material groups
-      Object.entries(materialGroups).forEach(([groupName, group]) => {
-        group.targets = Object.entries(state.materials)
-          .filter(([name]) => {
-            const cleanName = name.replace(/\s-\sMaterial(?:\s\d+)?$/i, "").trim();
-            return group.meshNames.some(m =>
-              cleanName.toLowerCase() === m.toLowerCase() ||
-              cleanName.toLowerCase().includes(m.toLowerCase())
-            );
-          })
-          .map(([name, material]) => ({ name, material }));
-
-        group.targets.forEach(({ material }) => {
-          applyMaterialPreset(material, groupName);
-        });
-      });
-
-      // Log mesh assignment for debugging
-      Object.entries(materialGroups).forEach(([groupName, group]) => {
-        console.log(`[Meshes] Group "${groupName}":`, Object.keys(state.meshes[groupName] || {}));
-      });
-
-    // Set default mesh visibility
+    // build target lists and apply presets (skip dual selectors)
     Object.entries(materialGroups).forEach(([groupName, group]) => {
+      if (group.type === "dualSelector") return;
+
+      group.targets = Object.entries(state.materials)
+        .filter(([name]) => {
+          const cleanName = name.replace(/\s-\sMaterial(?:\s\d+)?$/i, "").trim();
+          return group.meshNames.some(m =>
+            cleanName.toLowerCase() === m.toLowerCase() ||
+            cleanName.toLowerCase().includes(m.toLowerCase())
+          );
+        })
+        .map(([name, material]) => ({ name, material }));
+
+      group.targets.forEach(({ material }) => applyMaterialPreset(material, groupName));
+
+      console.log(`[meshes] ${groupName}:`, Object.keys(state.meshes[groupName] || {}));
+    });
+
+    // set default visibility for toggle groups (skip dual selectors)
+    Object.entries(materialGroups).forEach(([groupName, group]) => {
+      if (group.type === "dualSelector") return;
       if (!group.toggle) return;
 
-      // Hide everything first
       Object.keys(state.meshes[groupName] || {}).forEach(meshName => {
         toggleMesh(groupName, meshName, false);
       });
 
-      const defaultMesh =
-        group.defaultMesh ||
-        group.meshOptions?.[0];
+      const defaultMesh = group.defaultMesh || group.meshOptions?.[0];
 
-      if (
-        defaultMesh &&
-        defaultMesh !== "None" &&
-        state.meshes[groupName]?.[defaultMesh]
-      ) {
+      if (defaultMesh && defaultMesh !== "None" && state.meshes[groupName]?.[defaultMesh]) {
         state.activeMesh[groupName] = defaultMesh;
         toggleMesh(groupName, defaultMesh, true);
       } else {
@@ -478,47 +684,52 @@ async function init() {
 
     buildGroupUI(materialGroups);
     state._lastMaterialGroups = materialGroups;
+
+    // apply default dual selections
+    Object.entries(materialGroups).forEach(([groupName, group]) => {
+      if (group.type !== "dualSelector") return;
+      applyDualSelection(group.side, group);
+      // init color picker for default material
+      const section = document.querySelector(`[data-dual-side="${group.side}"]`);
+      if (section?._refreshColors) section._refreshColors(group.defaultMaterial);
+    });
+
     scene.add(state.model);
     onWindowResize();
 
-    // Apply default colors/swatches first
+    // apply default swatches/colors
     Object.entries(materialGroups).forEach(([groupName, group]) => {
-      if (!group.swatches || group.swatches.length === 0) return;
+      if (group.type === "dualSelector") return;
+      if (!group.swatches?.length) return;
 
       if (group.defaultSwatch) {
-        const defaultSwatch = group.swatches.find(s => s.name === group.defaultSwatch);
-        if (!defaultSwatch || !defaultSwatch.colors) return;
-        const allBtns = Array.from(document.querySelectorAll(`.swatch-btn[data-group="${groupName}"]`));
-        const defaultIdx = group.swatches.findIndex(s => s.name === group.defaultSwatch);
-        const matchingBtn = allBtns[defaultIdx];
-        if (matchingBtn) {
-          applySwatch(groupName, defaultSwatch, matchingBtn, materialGroups);
-        }
+        const swatch = group.swatches.find(s => s.name === group.defaultSwatch);
+        if (!swatch?.colors) return;
+        const idx = group.swatches.findIndex(s => s.name === group.defaultSwatch);
+        const btn = document.querySelectorAll(`.swatch-btn[data-group="${groupName}"]`)[idx];
+        if (btn) applySwatch(groupName, swatch, btn, materialGroups);
         return;
       }
 
       if (!group.defaultColor) return;
-      const defaultIdx = group.swatches.findIndex(s => s.color === group.defaultColor);
-      if (defaultIdx < 0) return;
-      const allBtns = Array.from(document.querySelectorAll(`.swatch-btn[data-group="${groupName}"]`));
-      const matchingBtn = allBtns[defaultIdx];
-      if (matchingBtn) {
-        applySwatch(groupName, group.swatches[defaultIdx], matchingBtn, materialGroups);
-      }
+      const idx = group.swatches.findIndex(s => s.color === group.defaultColor);
+      if (idx < 0) return;
+      const btn = document.querySelectorAll(`.swatch-btn[data-group="${groupName}"]`)[idx];
+      if (btn) applySwatch(groupName, group.swatches[idx], btn, materialGroups);
     });
 
-    // Restore from URL state if present (overrides defaults)
-    const urlParams = new URLSearchParams(window.location.search);
-    const savedState = urlParams.get('v');
+    // restore from URL if there's a saved design
+    const savedState = new URLSearchParams(window.location.search).get('v');
     if (savedState) {
       const decoded = decodeState(savedState);
       if (decoded) {
         applyState(decoded);
-        console.log('Restored design from URL');
+        console.log('restored design from url');
       }
     }
+
   } catch (err) {
-    console.error("Load error:", err);
+    console.error("load error:", err);
   } finally {
     if (loading) loading.style.display = "none";
   }
@@ -526,32 +737,23 @@ async function init() {
 
 init();
 
-// =====================================================
-// STATE PERSISTENCE (URL sharing)
-// =====================================================
+// --- url state sharing ---
 
 function encodeState() {
-  const modelName = getModelName();
-  const stateData = { model: modelName, groups: {} };
+  const stateData = { model: getModelName(), groups: {} };
+  const materialGroups = state._lastMaterialGroups || {};
 
   Object.entries(state.selectedSwatches).forEach(([groupName, swatch]) => {
     if (!swatch) return;
-    const materialGroups = state._lastMaterialGroups || {};
     const group = materialGroups[groupName];
     if (!group) return;
 
-    if (swatch.colors) {
-      // Pattern/multi-color swatch
-      const idx = group.swatches.findIndex(s => s.name === swatch.name);
-      if (idx >= 0) stateData.groups[groupName] = { swatchIdx: idx };
-    } else if (swatch.color) {
-      // Single color swatch
-      const idx = group.swatches.findIndex(s => s.color === swatch.color);
-      if (idx >= 0) stateData.groups[groupName] = { swatchIdx: idx };
-    }
+    const idx = group.swatches.findIndex(s =>
+      swatch.colors ? s.name === swatch.name : s.color === swatch.color
+    );
+    if (idx >= 0) stateData.groups[groupName] = { swatchIdx: idx };
   });
 
-  // Save active mesh for toggle groups
   Object.entries(state.activeMesh).forEach(([groupName, meshName]) => {
     if (!stateData.groups[groupName]) stateData.groups[groupName] = {};
     stateData.groups[groupName].mesh = meshName;
@@ -569,7 +771,7 @@ function decodeState(encoded) {
 }
 
 function applyState(stateData) {
-  if (!stateData || !stateData.groups) return;
+  if (!stateData?.groups) return;
   const materialGroups = state._lastMaterialGroups;
   if (!materialGroups) return;
 
@@ -577,59 +779,45 @@ function applyState(stateData) {
     const group = materialGroups[groupName];
     if (!group) return;
 
-    // Apply active mesh first (for toggle groups)
     if (groupState.mesh && group.toggle) {
       setActiveMesh(groupName, groupState.mesh, materialGroups);
     }
 
-    // Apply swatch color
     if (groupState.swatchIdx !== undefined && group.swatches[groupState.swatchIdx]) {
       const swatch = group.swatches[groupState.swatchIdx];
-      const allBtns = Array.from(document.querySelectorAll(`.swatch-btn[data-group="${groupName}"]`));
-      const matchingBtn = allBtns[groupState.swatchIdx];
-      if (matchingBtn) {
-        applySwatch(groupName, swatch, matchingBtn, materialGroups);
-      }
+      const btn = document.querySelectorAll(`.swatch-btn[data-group="${groupName}"]`)[groupState.swatchIdx];
+      if (btn) applySwatch(groupName, swatch, btn, materialGroups);
     }
   });
 }
 
 function shareState() {
-  const encoded = encodeState();
-  const url = window.location.origin + window.location.pathname + '?v=' + encoded;
+  const url = window.location.origin + window.location.pathname + '?v=' + encodeState();
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById('shareBtn');
-    const originalText = btn.textContent;
+    const original = btn.textContent;
     btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = originalText, 2000);
+    setTimeout(() => btn.textContent = original, 2000);
   }).catch(() => {
-    prompt('Copy this link:', window.location.origin + window.location.pathname + '?v=' + encoded);
+    prompt('Copy this link:', url);
   });
 }
 
-// =====================================================
-// TOOLBAR
-// =====================================================
+// --- toolbar ---
 
 document.getElementById("rotateBtn").addEventListener("click", () => {
   state.autoRotate = !state.autoRotate;
 });
 
 const shareBtn = document.getElementById("shareBtn");
-if (shareBtn) {
-  shareBtn.addEventListener("click", shareState);
-}
+if (shareBtn) shareBtn.addEventListener("click", shareState);
 
-// =====================================================
-// LOOP
-// =====================================================
+// --- render loop ---
 
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
-  if (state.model && state.autoRotate) {
-    state.model.rotation.y += 0.01;
-  }
+  if (state.model && state.autoRotate) state.model.rotation.y += 0.01;
   renderer.render(scene, camera);
 }
 

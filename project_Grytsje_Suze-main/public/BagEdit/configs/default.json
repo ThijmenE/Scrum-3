@@ -9,5 +9,17 @@
     ],
     "defaultColor": "#f6e7c1",
     "toggle": false
+  },
+    "hardware": {
+    "title": "Hardware",
+    "subtitle": "",
+    "meshNames": ["Hardware"],
+    "swatches": [
+      { "name": "Silver", "color": "#bfc5c7" },
+      { "name": "Gold", "color": "#c9a24a" }
+    ],
+    "toggle": false,
+    "defaultColor": "#bfc5c7"
   }
 }
+
