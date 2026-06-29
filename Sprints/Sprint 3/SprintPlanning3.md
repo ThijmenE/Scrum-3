@@ -1,0 +1,2 @@
+Deze week willen we de modulaire tas afmaken en de rest van het team gaat per persoon beginnen met de laatste tassen.
+De website moet deze week af en de tas editor moet functioneel zijn en we willen tenminste 2 models werkende krijgen erop om te testen.
