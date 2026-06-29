@@ -1,0 +1,25 @@
+{
+  "flavors": {
+    "title": "Flavors",
+    "subtitle": "(Base color)",
+    "meshNames": ["Body"],
+    "swatches": [
+      { "name": "Vanilla", "color": "#f6e7c1" },
+      { "name": "Chocolate", "color": "#4b2f22" }
+    ],
+    "defaultColor": "#f6e7c1",
+    "toggle": false
+  },
+    "hardware": {
+    "title": "Hardware",
+    "subtitle": "",
+    "meshNames": ["Hardware"],
+    "swatches": [
+      { "name": "Silver", "color": "#bfc5c7" },
+      { "name": "Gold", "color": "#c9a24a" }
+    ],
+    "toggle": false,
+    "defaultColor": "#bfc5c7"
+  }
+}
+

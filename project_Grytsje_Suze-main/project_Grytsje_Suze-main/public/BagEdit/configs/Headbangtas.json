@@ -1,0 +1,49 @@
+{
+
+  "pupil": {
+    "title": "Pupil",
+    "subtitle": "Shape & colour",
+    "meshNames": ["Heart", "prism", "Star", "Eye"],
+    "meshOptions": ["Heart", "prism", "Star", "Eye"],
+    "defaultMesh": "Eye",
+    "swatches": [
+      { "name": "White",       "color": "#FFFFFF" },
+      { "name": "Yellow",      "color": "#FFE44D" },
+      { "name": "Lime",        "color": "#B4E90D" },
+      { "name": "Orange",      "color": "#FF7B2E" },
+      { "name": "Pink",        "color": "#FF8FBF" },
+      { "name": "Fuchsia",     "color": "#D946C7" },
+      { "name": "Warm Purple", "color": "#8B3FB5" },
+      { "name": "Turquoise",   "color": "#2ED6C4" },
+      { "name": "Royal Blue",  "color": "#2057C9" },
+      { "name": "Black",       "color": "#0A0A0A" }
+    ],
+    "toggle": true,
+    "singleChoice": true
+  },
+"Handle": {
+  "title": "Close or Far",
+  "subtitle": "",
+  "meshNames": ["Torus015", "Torus015_1", "Plane016", "Plane016_1", "Plane001", "Plane001_1"],
+  "meshOptions": ["HandleClose", "HandleFar"],
+  "meshOptionGroups": {
+    "HandleClose": ["Plane001", "Plane001_1"],
+    "HandleFar": ["Torus015", "Torus015_1", "Plane016", "Plane016_1"]
+  },
+  "defaultMesh": "HandleClose",
+  "swatches": [],
+  "toggle": true,
+  "singleChoice": true
+},
+  "hardware": {
+    "title": "Hardware",
+    "subtitle": "Logo & hardware colour",
+    "meshNames": ["Hardware", "Torus015", "Torus015_1"],
+    "swatches": [
+      { "name": "Silver", "color": "#bfc5c7" },
+      { "name": "Gold",   "color": "#c9a24a" }
+    ],
+    "defaultColor": "#bfc5c7",
+    "toggle": false
+  }
+}
