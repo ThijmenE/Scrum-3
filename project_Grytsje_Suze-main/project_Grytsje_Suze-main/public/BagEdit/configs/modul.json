@@ -1,0 +1,128 @@
+{
+
+  "addon": {
+    "title": "Add-on Pattern",
+    "subtitle": "Front & back pattern",
+    "meshNames": [
+      "Voorkantvlinder",
+      "GrootCirkelzwart", "Voorkantcirkelzwar",
+      "Grootmiddelzwart", "Voorkantrondcirkelzwart",
+      "Middelcirkelzwart",
+      "Voorkantsterzwart",
+      "Kleinsterzwart"
+    ],
+    "meshOptions": ["None", "Vlinder", "GrootCirkel", "GrootMidden", "MiddelCirkel", "Ster", "KleinSter"],
+    "meshOptionGroups": {
+      "Vlinder":      ["Voorkantvlinder"],
+      "GrootCirkel":  ["GrootCirkelzwart", "Voorkantcirkelzwar"],
+      "GrootMidden":  ["Grootmiddelzwart", "Voorkantrondcirkelzwart"],
+      "MiddelCirkel": ["Middelcirkelzwart"],
+      "Ster":         ["Voorkantsterzwart"],
+      "KleinSter":    ["Kleinsterzwart"]
+    },
+    "defaultMesh": "GrootMidden",
+    "defaultColor": "#FFE44D",
+    "swatches": [
+      { "name": "Black",       "color": "#0A0A0A" },
+      { "name": "White",       "color": "#FFFFFF" },
+      { "name": "Neon Orange", "color": "#FF6000" },
+      { "name": "Neon Yellow", "color": "#FFE000" },
+      { "name": "Neon Green",  "color": "#39FF14" },
+      { "name": "Neon Fuchsia","color": "#FF00CC" },
+      { "name": "Orange",      "color": "#FF7B2E" },
+      { "name": "Turquoise",   "color": "#40C4AA" },
+      { "name": "Lime",        "color": "#B4E90D" },
+      { "name": "Fuchsia",     "color": "#D946C7" },
+      { "name": "Pink",        "color": "#FF8FBF" },
+      { "name": "Yellow",      "color": "#FFE44D" }
+    ],
+    "toggle": true,
+    "singleChoice": true
+  },
+
+  "handle": {
+    "title": "Handle",
+    "subtitle": "Plexiglas colour",
+    "meshNames": ["Cylinder015", "Cylinder015_1", "Cylinder015_2"],
+    "swatches": [
+      { "name": "Neon Orange",    "color": "#FF6000" },
+      { "name": "Neon Yellow",    "color": "#FFE000" },
+      { "name": "Neon Green",     "color": "#39FF14" },
+      { "name": "Neon Fuchsia",   "color": "#FF00CC" },
+      { "name": "Neon Pink",      "color": "#FF69B4" },
+      { "name": "Orange",         "color": "#FF7B2E" },
+      { "name": "Soft Turquoise", "color": "#40C4AA" },
+      { "name": "Lime",           "color": "#B4E90D" },
+      { "name": "Fuchsia",        "color": "#D946C7" },
+      { "name": "White",          "color": "#FFFFFF" },
+      { "name": "Black",          "color": "#0A0A0A" },
+      { "name": "Silver",         "color": "#bfc5c7" },
+      { "name": "Gold",           "color": "#c9a24a" },
+      { "name": "Pink",           "color": "#FF8FBF" },
+      { "name": "Yellow",         "color": "#FFE44D" }
+    ],
+    "defaultColor": "#FFFFFF",
+    "toggle": false
+  },
+
+  "body": {
+    "title": "Body",
+    "subtitle": "Bag body colour",
+    "meshNames": ["Cylinder022", "Cylinder022_1"],
+    "swatches": [
+      { "name": "Black",       "color": "#0A0A0A" },
+      { "name": "White",       "color": "#FFFFFF" },
+      { "name": "Yellow",      "color": "#FFE44D" },
+      { "name": "Lime",        "color": "#B4E90D" },
+      { "name": "Orange",      "color": "#FF7B2E" },
+      { "name": "Pink",        "color": "#FF8FBF" },
+      { "name": "Fuchsia",     "color": "#D946C7" },
+      { "name": "Warm Purple", "color": "#8B3FB5" },
+      { "name": "Turquoise",   "color": "#2ED6C4" },
+      { "name": "Royal Blue",  "color": "#2057C9" }
+    ],
+    "toggle": false
+  },
+
+  "strap": {
+    "title": "Strap",
+    "subtitle": "Leather colour",
+    "meshNames": ["Riem"],
+    "meshOptions": ["None", "Riem"],
+    "defaultMesh": "None",
+    "singleChoice": true,
+    "swatches": [
+      { "name": "Black",       "color": "#0A0A0A" },
+      { "name": "White",       "color": "#FFFFFF" },
+      { "name": "Yellow",      "color": "#FFE44D" },
+      { "name": "Lime",        "color": "#B4E90D" },
+      { "name": "Orange",      "color": "#FF7B2E" },
+      { "name": "Pink",        "color": "#FF8FBF" },
+      { "name": "Fuchsia",     "color": "#D946C7" },
+      { "name": "Warm Purple", "color": "#8B3FB5" },
+      { "name": "Turquoise",   "color": "#2ED6C4" }
+    ],
+    "defaultColor": "#0A0A0A",
+    "toggle": true
+  },
+
+  "hardware": {
+    "title": "Hardware",
+    "subtitle": "Zipper & rings",
+    "meshNames": [
+      "Cube003", "Cube004",
+      "Cylinder005", "Cylinder012",
+      "Torus001", "Torus002",
+      "Torus067",
+      "Torus067_1", "Torus067_2", "Torus067_3", "Torus067_4",
+      "Torus067_5", "Torus067_6", "Torus067_7", "Torus067_8",
+      "Torus067_9", "Torus067_10"
+    ],
+    "swatches": [
+      { "name": "Silver", "color": "#bfc5c7" },
+      { "name": "Gold",   "color": "#c9a24a" }
+    ],
+    "defaultColor": "#bfc5c7",
+    "toggle": false
+  }
+}

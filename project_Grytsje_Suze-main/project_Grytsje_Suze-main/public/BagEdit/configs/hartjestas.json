@@ -1,0 +1,87 @@
+{
+  "flavors": {
+    "meshNames": ["BagBase"],
+    "swatches": [],
+    "toggle": false
+  },
+
+  "front": {
+    "title": "Front",
+    "type": "dualSelector",
+    "side": "front",
+    "shapes": ["Shape1", "Shape2", "Shape3", "Hart", "Diamond", "Clothing hanger", "Square"],
+    "materials": ["base", "glitter", "leopard", "patent", "polkadot", "reflective", "zebra"],
+    "noMaterial": ["Diamond"],
+    "hasLamp": true,
+    "materialColors": {
+      "base": [
+        { "name": "White",       "color": "#FFFFFF" },
+        { "name": "Yellow",      "color": "#FFE44D" },
+        { "name": "Lime",        "color": "#B4E90D" },
+        { "name": "Orange",      "color": "#FF7B2E" },
+        { "name": "Pink",        "color": "#FF8FBF" },
+        { "name": "Fuchsia",     "color": "#D946C7" },
+        { "name": "Warm Purple", "color": "#8B3FB5" },
+        { "name": "Turquoise",   "color": "#2ED6C4" },
+        { "name": "Royal Blue",  "color": "#2057C9" }
+      ],
+      "glitter": [],
+      "patent": [
+        { "name": "Silver",  "color": "#BFBFBF" },
+        { "name": "Gold",    "color": "#C9A24A" },
+        { "name": "Pink",    "color": "#F2BFCC" },
+        { "name": "Red",     "color": "#CC1111" },
+        { "name": "Black",   "color": "#0A0A0A" }
+      ]
+    },
+    "defaultShape": "Hart",
+    "defaultMaterial": "Patent",
+    "defaultColor": "#CC1111"
+  },
+
+  "back": {
+    "title": "Back",
+    "type": "dualSelector",
+    "side": "back",
+    "shapes": ["Shape1", "Shape2", "Shape3", "Hart", "Diamond", "Clothing hanger", "Square"],
+    "materials": ["base", "glitter", "leopard", "patent", "polkadot", "reflective", "zebra"],
+    "noMaterial": ["Diamond"],
+    "hasLamp": true,
+    "materialColors": {
+      "base": [
+        { "name": "White",       "color": "#FFFFFF" },
+        { "name": "Yellow",      "color": "#FFE44D" },
+        { "name": "Lime",        "color": "#B4E90D" },
+        { "name": "Orange",      "color": "#FF7B2E" },
+        { "name": "Pink",        "color": "#FF8FBF" },
+        { "name": "Fuchsia",     "color": "#D946C7" },
+        { "name": "Warm Purple", "color": "#8B3FB5" },
+        { "name": "Turquoise",   "color": "#2ED6C4" },
+        { "name": "Royal Blue",  "color": "#2057C9" }
+      ],
+      "glitter": [],
+      "patent": [
+        { "name": "Silver",  "color": "#BFBFBF" },
+        { "name": "Gold",    "color": "#C9A24A" },
+        { "name": "Pink",    "color": "#F2BFCC" },
+        { "name": "Red",     "color": "#CC1111" },
+        { "name": "Black",   "color": "#0A0A0A" }
+      ]
+    },
+    "defaultShape": "Hart",
+    "defaultMaterial": "Patent",
+    "defaultColor": "#CC1111"
+  },
+
+  "hardware": {
+    "title": "Hardware",
+    "subtitle": "",
+    "meshNames": ["Chain", "Holder", "Slider"],
+    "swatches": [
+      { "name": "Silver", "color": "#bfc5c7" },
+      { "name": "Gold",   "color": "#c9a24a" }
+    ],
+    "toggle": false,
+    "defaultColor": "#bfc5c7"
+  }
+}
